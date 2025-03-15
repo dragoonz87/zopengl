@@ -83,25 +83,42 @@ pub fn main() !void {
     glad.glDeleteShader(vertexShader);
     glad.glDeleteShader(fragmentShader);
 
-    const vertices = [_]f32{
+    const vertices1 = [_]f32{
         0.5,  0.5,  0.0,
         0.5,  -0.5, 0.0,
         -0.5, 0.5,  0.0,
+    };
+
+    var vao1: c_uint = undefined;
+    var vbo1: c_uint = undefined;
+    glad.glGenVertexArrays(1, &vao1);
+    glad.glGenBuffers(1, &vbo1);
+    glad.glBindVertexArray(vao1);
+
+    glad.glBindBuffer(glad.GL_ARRAY_BUFFER, vbo1);
+    glad.glBufferData(glad.GL_ARRAY_BUFFER, vertices1.len * @sizeOf(f32), &vertices1, glad.GL_STATIC_DRAW);
+
+    glad.glVertexAttribPointer(0, 3, glad.GL_FLOAT, glad.GL_FALSE, 3 * @sizeOf(f32), &0);
+    glad.glEnableVertexAttribArray(0);
+
+    glad.glBindBuffer(glad.GL_ARRAY_BUFFER, 0);
+    glad.glBindVertexArray(0);
+
+    const vertices2 = [_]f32{
         0.5,  -0.5, 0.0,
         -0.5, -0.5, 0.0,
         -0.5, 0.5,  0.0,
     };
+    var vao2: c_uint = undefined;
+    var vbo2: c_uint = undefined;
+    glad.glGenVertexArrays(1, &vao2);
+    glad.glGenBuffers(1, &vbo2);
+    glad.glBindVertexArray(vao2);
 
-    var vao: c_uint = undefined;
-    var vbo: c_uint = undefined;
-    glad.glGenVertexArrays(1, &vao);
-    glad.glGenBuffers(1, &vbo);
-    glad.glBindVertexArray(vao);
+    glad.glBindBuffer(glad.GL_ARRAY_BUFFER, vbo2);
+    glad.glBufferData(glad.GL_ARRAY_BUFFER, vertices2.len * @sizeOf(f32), &vertices2, glad.GL_STATIC_DRAW);
 
-    glad.glBindBuffer(glad.GL_ARRAY_BUFFER, vbo);
-    glad.glBufferData(glad.GL_ARRAY_BUFFER, vertices.len * @sizeOf(f32), &vertices, glad.GL_STATIC_DRAW);
-
-    glad.glVertexAttribPointer(0, 3, glad.GL_FLOAT, glad.GL_FALSE, 3 * @sizeOf(f32), @ptrCast(&0));
+    glad.glVertexAttribPointer(0, 3, glad.GL_FLOAT, glad.GL_FALSE, 3 * @sizeOf(f32), &0);
     glad.glEnableVertexAttribArray(0);
 
     glad.glBindBuffer(glad.GL_ARRAY_BUFFER, 0);
@@ -116,8 +133,11 @@ pub fn main() !void {
         glad.glClear(glad.GL_COLOR_BUFFER_BIT);
 
         glad.glUseProgram(shaderProgram);
-        glad.glBindVertexArray(vao);
-        glad.glDrawArrays(glad.GL_TRIANGLES, 0, vertices.len / 3);
+        glad.glBindVertexArray(vao1);
+        glad.glDrawArrays(glad.GL_TRIANGLES, 0, vertices1.len / 3);
+        glad.glBindVertexArray(0);
+        glad.glBindVertexArray(vao2);
+        glad.glDrawArrays(glad.GL_TRIANGLES, 0, vertices1.len / 3);
         glad.glBindVertexArray(0);
 
         // FINALIZE
