@@ -86,32 +86,24 @@ pub fn main() !void {
     const vertices = [_]f32{
         0.5,  0.5,  0.0,
         0.5,  -0.5, 0.0,
+        -0.5, 0.5,  0.0,
+        0.5,  -0.5, 0.0,
         -0.5, -0.5, 0.0,
         -0.5, 0.5,  0.0,
-    };
-    const indices = [_]c_uint{
-        0, 1, 3,
-        1, 2, 3,
     };
 
     var vao: c_uint = undefined;
     var vbo: c_uint = undefined;
-    var ebo: c_uint = undefined;
     glad.glGenVertexArrays(1, &vao);
     glad.glGenBuffers(1, &vbo);
-    glad.glGenBuffers(1, &ebo);
     glad.glBindVertexArray(vao);
 
     glad.glBindBuffer(glad.GL_ARRAY_BUFFER, vbo);
     glad.glBufferData(glad.GL_ARRAY_BUFFER, vertices.len * @sizeOf(f32), &vertices, glad.GL_STATIC_DRAW);
 
-    glad.glBindBuffer(glad.GL_ELEMENT_ARRAY_BUFFER, ebo);
-    glad.glBufferData(glad.GL_ELEMENT_ARRAY_BUFFER, indices.len * @sizeOf(c_uint), &indices, glad.GL_STATIC_DRAW);
-
     glad.glVertexAttribPointer(0, 3, glad.GL_FLOAT, glad.GL_FALSE, 3 * @sizeOf(f32), @ptrCast(&0));
     glad.glEnableVertexAttribArray(0);
 
-    glad.glBindBuffer(glad.GL_ELEMENT_ARRAY_BUFFER, 0);
     glad.glBindBuffer(glad.GL_ARRAY_BUFFER, 0);
     glad.glBindVertexArray(0);
 
@@ -125,7 +117,7 @@ pub fn main() !void {
 
         glad.glUseProgram(shaderProgram);
         glad.glBindVertexArray(vao);
-        glad.glDrawElements(glad.GL_TRIANGLES, 6, glad.GL_UNSIGNED_INT, &indices);
+        glad.glDrawArrays(glad.GL_TRIANGLES, 0, vertices.len / 3);
         glad.glBindVertexArray(0);
 
         // FINALIZE
