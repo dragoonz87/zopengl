@@ -10,26 +10,12 @@ const glfw = @import("ctranslations/glfw.zig");
 const GlfwErrors = error{FailedWindowCreate};
 const GladErrors = error{FailedInitialize};
 
-const vertexShaderSource = [_][*c]const u8{
-    \\#version 330 core
-    \\layout (location = 0) in vec3 aPos;
-    \\
-    \\void main()
-    \\{
-    \\    gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
-    \\}
-};
-const fragmentShaderSource = [_][*c]const u8{
-    \\#version 330 core
-    \\out vec4 FragColor;
-    \\
-    \\void main()
-    \\{
-    \\    FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);
-    \\}
-};
+const DebugAllocator = std.heap.DebugAllocator(.{});
+var daInit = DebugAllocator.init;
 
 pub fn main() !void {
+    const alloc = daInit.allocator();
+
     _ = glfw.glfwInit();
     glfw.glfwWindowHint(glfw.GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfw.glfwWindowHint(glfw.GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -54,7 +40,7 @@ pub fn main() !void {
     var infoLog: [512]u8 = undefined;
 
     const vertexShader: c_uint = glad.glCreateShader(glad.GL_VERTEX_SHADER);
-    glad.glShaderSource(vertexShader, 1, &vertexShaderSource, null);
+    glad.glShaderSource(vertexShader, 1, &(try load_shader(alloc, "basic.glsl")), null);
     glad.glCompileShader(vertexShader);
     glad.glGetShaderiv(vertexShader, glad.GL_COMPILE_STATUS, &success);
     if (success == cgen.cfalse) {
@@ -62,26 +48,47 @@ pub fn main() !void {
         std.debug.print("Shader compilation failed: {s}\n", .{infoLog});
     }
 
-    const fragmentShader: c_uint = glad.glCreateShader(glad.GL_FRAGMENT_SHADER);
-    glad.glShaderSource(fragmentShader, 1, &fragmentShaderSource, null);
-    glad.glCompileShader(fragmentShader);
-    glad.glGetShaderiv(fragmentShader, glad.GL_COMPILE_STATUS, &success);
+    const fragmentOrangeShader: c_uint = glad.glCreateShader(glad.GL_FRAGMENT_SHADER);
+    glad.glShaderSource(fragmentOrangeShader, 1, &(try load_shader(alloc, "orange.glsl")), null);
+    glad.glCompileShader(fragmentOrangeShader);
+    glad.glGetShaderiv(fragmentOrangeShader, glad.GL_COMPILE_STATUS, &success);
     if (success == cgen.cfalse) {
-        glad.glGetShaderInfoLog(fragmentShader, infoLog.len, null, &infoLog);
+        glad.glGetShaderInfoLog(fragmentOrangeShader, infoLog.len, null, &infoLog);
         std.debug.print("Shader compilation failed: {s}\n", .{infoLog});
     }
 
-    const shaderProgram: c_uint = glad.glCreateProgram();
-    glad.glAttachShader(shaderProgram, vertexShader);
-    glad.glAttachShader(shaderProgram, fragmentShader);
-    glad.glLinkProgram(shaderProgram);
-    glad.glGetProgramiv(shaderProgram, glad.GL_LINK_STATUS, &success);
+    const fragmentYellowShader: c_uint = glad.glCreateShader(glad.GL_FRAGMENT_SHADER);
+    glad.glShaderSource(fragmentYellowShader, 1, &(try load_shader(alloc, "yellow.glsl")), null);
+    glad.glCompileShader(fragmentYellowShader);
+    glad.glGetShaderiv(fragmentYellowShader, glad.GL_COMPILE_STATUS, &success);
     if (success == cgen.cfalse) {
-        glad.glGetProgramInfoLog(shaderProgram, infoLog.len, null, &infoLog);
+        glad.glGetShaderInfoLog(fragmentYellowShader, infoLog.len, null, &infoLog);
+        std.debug.print("Shader compilation failed: {s}\n", .{infoLog});
+    }
+
+    const shaderOrangeProgram: c_uint = glad.glCreateProgram();
+    glad.glAttachShader(shaderOrangeProgram, vertexShader);
+    glad.glAttachShader(shaderOrangeProgram, fragmentOrangeShader);
+    glad.glLinkProgram(shaderOrangeProgram);
+    glad.glGetProgramiv(shaderOrangeProgram, glad.GL_LINK_STATUS, &success);
+    if (success == cgen.cfalse) {
+        glad.glGetProgramInfoLog(shaderOrangeProgram, infoLog.len, null, &infoLog);
         std.debug.print("Shader link failed: {s}\n", .{infoLog});
     }
+
+    const shaderYellowProgram: c_uint = glad.glCreateProgram();
+    glad.glAttachShader(shaderYellowProgram, vertexShader);
+    glad.glAttachShader(shaderYellowProgram, fragmentYellowShader);
+    glad.glLinkProgram(shaderYellowProgram);
+    glad.glGetProgramiv(shaderYellowProgram, glad.GL_LINK_STATUS, &success);
+    if (success == cgen.cfalse) {
+        glad.glGetProgramInfoLog(shaderYellowProgram, infoLog.len, null, &infoLog);
+        std.debug.print("Shader link failed: {s}\n", .{infoLog});
+    }
+
     glad.glDeleteShader(vertexShader);
-    glad.glDeleteShader(fragmentShader);
+    glad.glDeleteShader(fragmentOrangeShader);
+    glad.glDeleteShader(fragmentYellowShader);
 
     const vertices1 = [_]f32{
         0.5,  0.5,  0.0,
@@ -132,10 +139,11 @@ pub fn main() !void {
         glad.glClearColor(0.2, 0.3, 0.3, 1);
         glad.glClear(glad.GL_COLOR_BUFFER_BIT);
 
-        glad.glUseProgram(shaderProgram);
+        glad.glUseProgram(shaderOrangeProgram);
         glad.glBindVertexArray(vao1);
         glad.glDrawArrays(glad.GL_TRIANGLES, 0, vertices1.len / 3);
         glad.glBindVertexArray(0);
+        glad.glUseProgram(shaderYellowProgram);
         glad.glBindVertexArray(vao2);
         glad.glDrawArrays(glad.GL_TRIANGLES, 0, vertices1.len / 3);
         glad.glBindVertexArray(0);
@@ -164,4 +172,9 @@ fn process_input(window: ?*glfw.GLFWwindow) void {
     }
 }
 
-// std.debug.print("{s}\n", .{@typeName(@TypeOf(window))});
+fn load_shader(alloc: std.mem.Allocator, filename: []const u8) ![1][*c]u8 {
+    const shaders = "shaders/";
+    const file = try fs.cwd().openFile(try std.mem.concat(alloc, u8, &[_][]u8{ @constCast(shaders), @constCast(filename) }), .{});
+    const buf: [*c]u8 = try file.readToEndAllocOptions(alloc, 1024 * 1024, null, 8, 0);
+    return [_][*]u8{buf};
+}
