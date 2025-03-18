@@ -40,9 +40,9 @@ pub fn main() !void {
     const shaderProgram = try Shader.new(alloc, "part1/customvertex.glsl", "part1/customfragment.glsl");
 
     const vertices = [_]f32{
-        0.5,  -0.5, 0.0, 1.0, 0.0, 0.0,
-        -0.5, -0.5, 0.0, 0.0, 1.0, 0.0,
-        0.0,  0.5,  0.0, 0.0, 0.0, 1.0,
+        0.5,  0.5,  0.0, 1.0, 0.0, 0.0,
+        -0.5, 0.5,  0.0, 0.0, 1.0, 0.0,
+        0.0,  -0.5, 0.0, 0.0, 0.0, 1.0,
     };
 
     var vao: c_uint = undefined;
