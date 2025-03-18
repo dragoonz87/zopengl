@@ -3,9 +3,10 @@ const fs = std.fs;
 
 const lib = @import("opengl_lib");
 
-const cgen = @import("ctranslations/general.zig");
-const glad = @import("ctranslations/glad.zig");
-const glfw = @import("ctranslations/glfw.zig");
+const cgen = lib.cgen;
+const glad = lib.glad;
+const glfw = lib.glfw;
+const Shader = lib.Shader;
 
 const GlfwErrors = error{FailedWindowCreate};
 const GladErrors = error{FailedInitialize};
@@ -36,43 +37,12 @@ pub fn main() !void {
         return GladErrors.FailedInitialize;
     }
 
-    var success: c_int = undefined;
-    var infoLog: [512]u8 = undefined;
-
-    const vertexShader: c_uint = glad.glCreateShader(glad.GL_VERTEX_SHADER);
-    glad.glShaderSource(vertexShader, 1, &(try load_shader(alloc, "part1/vertex.glsl")), null);
-    glad.glCompileShader(vertexShader);
-    glad.glGetShaderiv(vertexShader, glad.GL_COMPILE_STATUS, &success);
-    if (success == cgen.cfalse) {
-        glad.glGetShaderInfoLog(vertexShader, infoLog.len, null, &infoLog);
-        std.debug.print("Vertex shader compilation failed: {s}\n", .{infoLog});
-    }
-
-    const fragmentShader: c_uint = glad.glCreateShader(glad.GL_FRAGMENT_SHADER);
-    glad.glShaderSource(fragmentShader, 1, &(try load_shader(alloc, "part1/uniformfragment.glsl")), null);
-    glad.glCompileShader(fragmentShader);
-    glad.glGetShaderiv(fragmentShader, glad.GL_COMPILE_STATUS, &success);
-    if (success == cgen.cfalse) {
-        glad.glGetShaderInfoLog(fragmentShader, infoLog.len, null, &infoLog);
-        std.debug.print("Fragment shader compilation failed: {s}\n", .{infoLog});
-    }
-
-    const shaderProgram: c_uint = glad.glCreateProgram();
-    glad.glAttachShader(shaderProgram, vertexShader);
-    glad.glAttachShader(shaderProgram, fragmentShader);
-    glad.glLinkProgram(shaderProgram);
-    glad.glGetProgramiv(shaderProgram, glad.GL_LINK_STATUS, &success);
-    if (success == cgen.cfalse) {
-        glad.glGetProgramInfoLog(shaderProgram, infoLog.len, null, &infoLog);
-        std.debug.print("Shader link failed: {s}\n", .{infoLog});
-    }
-
-    glad.glDeleteShader(vertexShader);
+    const shaderProgram = try Shader.new(alloc, "part1/customvertex.glsl", "part1/customfragment.glsl");
 
     const vertices = [_]f32{
-        0.5,  0.5,  0.0, 1.0, 0.0, 0.0,
-        0.5,  -0.5, 0.0, 0.0, 1.0, 0.0,
-        -0.5, 0.5,  0.0, 0.0, 0.0, 1.0,
+        0.5,  -0.5, 0.0, 1.0, 0.0, 0.0,
+        -0.5, -0.5, 0.0, 0.0, 1.0, 0.0,
+        0.0,  0.5,  0.0, 0.0, 0.0, 1.0,
     };
 
     var vao: c_uint = undefined;
@@ -84,15 +54,14 @@ pub fn main() !void {
     glad.glBindBuffer(glad.GL_ARRAY_BUFFER, vbo);
     glad.glBufferData(glad.GL_ARRAY_BUFFER, vertices.len * @sizeOf(f32), &vertices, glad.GL_STATIC_DRAW);
 
-    glad.glVertexAttribPointer(0, 3, glad.GL_FLOAT, glad.GL_FALSE, 3 * @sizeOf(f32), &0);
+    glad.glVertexAttribPointer(0, 3, glad.GL_FLOAT, glad.GL_FALSE, 6 * @sizeOf(f32), &0);
     glad.glEnableVertexAttribArray(0);
+    glad.glVertexAttribPointer(1, 3, glad.GL_FLOAT, glad.GL_FALSE, 6 * @sizeOf(f32), @ptrFromInt(3 * @sizeOf(f32)));
+    glad.glEnableVertexAttribArray(1);
 
     glad.glBindBuffer(glad.GL_ARRAY_BUFFER, 0);
     glad.glBindVertexArray(0);
 
-    var time: f32 = @floatCast(glfw.glfwGetTime());
-    var green = (std.math.sin(time) / 2.0) + 0.5;
-    const vertexColorLocation = glad.glGetUniformLocation(shaderProgram, "ourColor");
     while (glfw.glfwWindowShouldClose(window) == cgen.cfalse) {
         // INPUT
         process_input(window);
@@ -101,17 +70,14 @@ pub fn main() !void {
         glad.glClearColor(0.2, 0.3, 0.3, 1);
         glad.glClear(glad.GL_COLOR_BUFFER_BIT);
 
-        glad.glUseProgram(shaderProgram);
-        glad.glUniform4f(vertexColorLocation, 0, green, 0, 1);
+        shaderProgram.use();
         glad.glBindVertexArray(vao);
-        glad.glDrawArrays(glad.GL_TRIANGLES, 0, vertices.len / 3);
+        glad.glDrawArrays(glad.GL_TRIANGLES, 0, vertices.len / 6);
         glad.glBindVertexArray(0);
 
         // FINALIZE
         _ = glfw.glfwSwapBuffers(window);
         _ = glfw.glfwPollEvents();
-        time = @floatCast(glfw.glfwGetTime());
-        green = (std.math.sin(time) / 2) + 0.5;
     }
 }
 
