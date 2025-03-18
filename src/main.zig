@@ -40,70 +40,49 @@ pub fn main() !void {
     var infoLog: [512]u8 = undefined;
 
     const vertexShader: c_uint = glad.glCreateShader(glad.GL_VERTEX_SHADER);
-    glad.glShaderSource(vertexShader, 1, &(try load_shader(alloc, "basic.glsl")), null);
+    glad.glShaderSource(vertexShader, 1, &(try load_shader(alloc, "part1/vertex.glsl")), null);
     glad.glCompileShader(vertexShader);
     glad.glGetShaderiv(vertexShader, glad.GL_COMPILE_STATUS, &success);
     if (success == cgen.cfalse) {
         glad.glGetShaderInfoLog(vertexShader, infoLog.len, null, &infoLog);
-        std.debug.print("Shader compilation failed: {s}\n", .{infoLog});
+        std.debug.print("Vertex shader compilation failed: {s}\n", .{infoLog});
     }
 
-    const fragmentOrangeShader: c_uint = glad.glCreateShader(glad.GL_FRAGMENT_SHADER);
-    glad.glShaderSource(fragmentOrangeShader, 1, &(try load_shader(alloc, "orange.glsl")), null);
-    glad.glCompileShader(fragmentOrangeShader);
-    glad.glGetShaderiv(fragmentOrangeShader, glad.GL_COMPILE_STATUS, &success);
+    const fragmentShader: c_uint = glad.glCreateShader(glad.GL_FRAGMENT_SHADER);
+    glad.glShaderSource(fragmentShader, 1, &(try load_shader(alloc, "part1/uniformfragment.glsl")), null);
+    glad.glCompileShader(fragmentShader);
+    glad.glGetShaderiv(fragmentShader, glad.GL_COMPILE_STATUS, &success);
     if (success == cgen.cfalse) {
-        glad.glGetShaderInfoLog(fragmentOrangeShader, infoLog.len, null, &infoLog);
-        std.debug.print("Shader compilation failed: {s}\n", .{infoLog});
+        glad.glGetShaderInfoLog(fragmentShader, infoLog.len, null, &infoLog);
+        std.debug.print("Fragment shader compilation failed: {s}\n", .{infoLog});
     }
 
-    const fragmentYellowShader: c_uint = glad.glCreateShader(glad.GL_FRAGMENT_SHADER);
-    glad.glShaderSource(fragmentYellowShader, 1, &(try load_shader(alloc, "yellow.glsl")), null);
-    glad.glCompileShader(fragmentYellowShader);
-    glad.glGetShaderiv(fragmentYellowShader, glad.GL_COMPILE_STATUS, &success);
+    const shaderProgram: c_uint = glad.glCreateProgram();
+    glad.glAttachShader(shaderProgram, vertexShader);
+    glad.glAttachShader(shaderProgram, fragmentShader);
+    glad.glLinkProgram(shaderProgram);
+    glad.glGetProgramiv(shaderProgram, glad.GL_LINK_STATUS, &success);
     if (success == cgen.cfalse) {
-        glad.glGetShaderInfoLog(fragmentYellowShader, infoLog.len, null, &infoLog);
-        std.debug.print("Shader compilation failed: {s}\n", .{infoLog});
-    }
-
-    const shaderOrangeProgram: c_uint = glad.glCreateProgram();
-    glad.glAttachShader(shaderOrangeProgram, vertexShader);
-    glad.glAttachShader(shaderOrangeProgram, fragmentOrangeShader);
-    glad.glLinkProgram(shaderOrangeProgram);
-    glad.glGetProgramiv(shaderOrangeProgram, glad.GL_LINK_STATUS, &success);
-    if (success == cgen.cfalse) {
-        glad.glGetProgramInfoLog(shaderOrangeProgram, infoLog.len, null, &infoLog);
-        std.debug.print("Shader link failed: {s}\n", .{infoLog});
-    }
-
-    const shaderYellowProgram: c_uint = glad.glCreateProgram();
-    glad.glAttachShader(shaderYellowProgram, vertexShader);
-    glad.glAttachShader(shaderYellowProgram, fragmentYellowShader);
-    glad.glLinkProgram(shaderYellowProgram);
-    glad.glGetProgramiv(shaderYellowProgram, glad.GL_LINK_STATUS, &success);
-    if (success == cgen.cfalse) {
-        glad.glGetProgramInfoLog(shaderYellowProgram, infoLog.len, null, &infoLog);
+        glad.glGetProgramInfoLog(shaderProgram, infoLog.len, null, &infoLog);
         std.debug.print("Shader link failed: {s}\n", .{infoLog});
     }
 
     glad.glDeleteShader(vertexShader);
-    glad.glDeleteShader(fragmentOrangeShader);
-    glad.glDeleteShader(fragmentYellowShader);
 
-    const vertices1 = [_]f32{
-        0.5,  0.5,  0.0,
-        0.5,  -0.5, 0.0,
-        -0.5, 0.5,  0.0,
+    const vertices = [_]f32{
+        0.5,  0.5,  0.0, 1.0, 0.0, 0.0,
+        0.5,  -0.5, 0.0, 0.0, 1.0, 0.0,
+        -0.5, 0.5,  0.0, 0.0, 0.0, 1.0,
     };
 
-    var vao1: c_uint = undefined;
-    var vbo1: c_uint = undefined;
-    glad.glGenVertexArrays(1, &vao1);
-    glad.glGenBuffers(1, &vbo1);
-    glad.glBindVertexArray(vao1);
+    var vao: c_uint = undefined;
+    var vbo: c_uint = undefined;
+    glad.glGenVertexArrays(1, &vao);
+    glad.glGenBuffers(1, &vbo);
+    glad.glBindVertexArray(vao);
 
-    glad.glBindBuffer(glad.GL_ARRAY_BUFFER, vbo1);
-    glad.glBufferData(glad.GL_ARRAY_BUFFER, vertices1.len * @sizeOf(f32), &vertices1, glad.GL_STATIC_DRAW);
+    glad.glBindBuffer(glad.GL_ARRAY_BUFFER, vbo);
+    glad.glBufferData(glad.GL_ARRAY_BUFFER, vertices.len * @sizeOf(f32), &vertices, glad.GL_STATIC_DRAW);
 
     glad.glVertexAttribPointer(0, 3, glad.GL_FLOAT, glad.GL_FALSE, 3 * @sizeOf(f32), &0);
     glad.glEnableVertexAttribArray(0);
@@ -111,26 +90,9 @@ pub fn main() !void {
     glad.glBindBuffer(glad.GL_ARRAY_BUFFER, 0);
     glad.glBindVertexArray(0);
 
-    const vertices2 = [_]f32{
-        0.5,  -0.5, 0.0,
-        -0.5, -0.5, 0.0,
-        -0.5, 0.5,  0.0,
-    };
-    var vao2: c_uint = undefined;
-    var vbo2: c_uint = undefined;
-    glad.glGenVertexArrays(1, &vao2);
-    glad.glGenBuffers(1, &vbo2);
-    glad.glBindVertexArray(vao2);
-
-    glad.glBindBuffer(glad.GL_ARRAY_BUFFER, vbo2);
-    glad.glBufferData(glad.GL_ARRAY_BUFFER, vertices2.len * @sizeOf(f32), &vertices2, glad.GL_STATIC_DRAW);
-
-    glad.glVertexAttribPointer(0, 3, glad.GL_FLOAT, glad.GL_FALSE, 3 * @sizeOf(f32), &0);
-    glad.glEnableVertexAttribArray(0);
-
-    glad.glBindBuffer(glad.GL_ARRAY_BUFFER, 0);
-    glad.glBindVertexArray(0);
-
+    var time: f32 = @floatCast(glfw.glfwGetTime());
+    var green = (std.math.sin(time) / 2.0) + 0.5;
+    const vertexColorLocation = glad.glGetUniformLocation(shaderProgram, "ourColor");
     while (glfw.glfwWindowShouldClose(window) == cgen.cfalse) {
         // INPUT
         process_input(window);
@@ -139,18 +101,17 @@ pub fn main() !void {
         glad.glClearColor(0.2, 0.3, 0.3, 1);
         glad.glClear(glad.GL_COLOR_BUFFER_BIT);
 
-        glad.glUseProgram(shaderOrangeProgram);
-        glad.glBindVertexArray(vao1);
-        glad.glDrawArrays(glad.GL_TRIANGLES, 0, vertices1.len / 3);
-        glad.glBindVertexArray(0);
-        glad.glUseProgram(shaderYellowProgram);
-        glad.glBindVertexArray(vao2);
-        glad.glDrawArrays(glad.GL_TRIANGLES, 0, vertices1.len / 3);
+        glad.glUseProgram(shaderProgram);
+        glad.glUniform4f(vertexColorLocation, 0, green, 0, 1);
+        glad.glBindVertexArray(vao);
+        glad.glDrawArrays(glad.GL_TRIANGLES, 0, vertices.len / 3);
         glad.glBindVertexArray(0);
 
         // FINALIZE
         _ = glfw.glfwSwapBuffers(window);
         _ = glfw.glfwPollEvents();
+        time = @floatCast(glfw.glfwGetTime());
+        green = (std.math.sin(time) / 2) + 0.5;
     }
 }
 
