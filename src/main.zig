@@ -62,6 +62,8 @@ pub fn main() !void {
     glad.glBindBuffer(glad.GL_ARRAY_BUFFER, 0);
     glad.glBindVertexArray(0);
 
+    shaderProgram.setFloat("offset", 0.2);
+
     while (glfw.glfwWindowShouldClose(window) == cgen.cfalse) {
         // INPUT
         process_input(window);

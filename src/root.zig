@@ -14,7 +14,7 @@ pub const Shader = struct {
         var infoLog: [512]u8 = undefined;
 
         const vertexShader: c_uint = glad.glCreateShader(glad.GL_VERTEX_SHADER);
-        glad.glShaderSource(vertexShader, 1, &(try load_shader(alloc, vertexPath)), null);
+        glad.glShaderSource(vertexShader, 1, &(try load_shader_source(alloc, vertexPath)), null);
         glad.glCompileShader(vertexShader);
         glad.glGetShaderiv(vertexShader, glad.GL_COMPILE_STATUS, &success);
         if (success == cgen.cfalse) {
@@ -24,7 +24,7 @@ pub const Shader = struct {
         }
 
         const fragmentShader: c_uint = glad.glCreateShader(glad.GL_FRAGMENT_SHADER);
-        glad.glShaderSource(fragmentShader, 1, &(try load_shader(alloc, fragmentPath)), null);
+        glad.glShaderSource(fragmentShader, 1, &(try load_shader_source(alloc, fragmentPath)), null);
         glad.glCompileShader(fragmentShader);
         glad.glGetShaderiv(fragmentShader, glad.GL_COMPILE_STATUS, &success);
         if (success == cgen.cfalse) {
@@ -53,17 +53,17 @@ pub const Shader = struct {
         glad.glUseProgram(self.id);
     }
     pub fn setBool(self: Shader, name: []const u8, value: bool) void {
-        glad.glUniform1i(glad.glGetUniformLocation(self.id, name), value);
+        glad.glUniform1i(glad.glGetUniformLocation(self.id, @ptrCast(name)), value);
     }
     pub fn setInt(self: Shader, name: []const u8, value: c_int) void {
-        glad.glUniform1i(glad.glGetUniformLocation(self.id, name), value);
+        glad.glUniform1i(glad.glGetUniformLocation(self.id, @ptrCast(name)), value);
     }
     pub fn setFloat(self: Shader, name: []const u8, value: f32) void {
-        glad.glUniform1f(glad.glGetUniformLocation(self.id, name), value);
+        glad.glUniform1f(glad.glGetUniformLocation(self.id, @ptrCast(name)), value);
     }
 };
 
-fn load_shader(alloc: std.mem.Allocator, filename: []const u8) ![1][*c]u8 {
+fn load_shader_source(alloc: std.mem.Allocator, filename: []const u8) ![1][*c]u8 {
     const shaders = "shaders/";
     const file = try fs.cwd().openFile(try std.mem.concat(alloc, u8, &[_][]u8{ @constCast(shaders), @constCast(filename) }), .{});
     const buf: [*c]u8 = try file.readToEndAllocOptions(alloc, 1024 * 1024, null, 8, 0);
