@@ -6,6 +6,7 @@ const lib = @import("opengl_lib");
 const cgen = lib.cgen;
 const glad = lib.glad;
 const glfw = lib.glfw;
+const stb = lib.stb;
 const Shader = lib.Shader;
 
 const GlfwErrors = error{FailedWindowCreate};
@@ -37,32 +38,78 @@ pub fn main() !void {
         return GladErrors.FailedInitialize;
     }
 
-    const shaderProgram = try Shader.new(alloc, "part1/customvertex.glsl", "part1/customfragment.glsl");
+    stb.stbi_set_flip_vertically_on_load(cgen.ctrue);
+
+    var texture: c_uint = undefined;
+    glad.glGenTextures(1, &texture);
+    glad.glActiveTexture(glad.GL_TEXTURE0);
+    glad.glBindTexture(glad.GL_TEXTURE_2D, texture);
+    glad.glTexParameteri(glad.GL_TEXTURE_2D, glad.GL_TEXTURE_WRAP_S, glad.GL_REPEAT);
+    glad.glTexParameteri(glad.GL_TEXTURE_2D, glad.GL_TEXTURE_WRAP_T, glad.GL_REPEAT);
+    glad.glTexParameteri(glad.GL_TEXTURE_2D, glad.GL_TEXTURE_MIN_FILTER, glad.GL_LINEAR_MIPMAP_LINEAR);
+    glad.glTexParameteri(glad.GL_TEXTURE_2D, glad.GL_TEXTURE_MAG_FILTER, glad.GL_LINEAR);
+    var width: c_int = undefined;
+    var height: c_int = undefined;
+    var num_channels: c_int = undefined;
+    const data = stb.stbi_load("textures/container.jpg", &width, &height, &num_channels, 0);
+    glad.glTexImage2D(glad.GL_TEXTURE_2D, 0, glad.GL_RGB, width, height, 0, glad.GL_RGB, glad.GL_UNSIGNED_BYTE, data);
+    glad.glGenerateMipmap(glad.GL_TEXTURE_2D);
+    stb.stbi_image_free(data);
+    var texture2: c_uint = undefined;
+    glad.glGenTextures(1, &texture2);
+    glad.glActiveTexture(glad.GL_TEXTURE1);
+    glad.glBindTexture(glad.GL_TEXTURE_2D, texture2);
+    glad.glTexParameteri(glad.GL_TEXTURE_2D, glad.GL_TEXTURE_WRAP_S, glad.GL_REPEAT);
+    glad.glTexParameteri(glad.GL_TEXTURE_2D, glad.GL_TEXTURE_WRAP_T, glad.GL_REPEAT);
+    glad.glTexParameteri(glad.GL_TEXTURE_2D, glad.GL_TEXTURE_MIN_FILTER, glad.GL_LINEAR_MIPMAP_LINEAR);
+    glad.glTexParameteri(glad.GL_TEXTURE_2D, glad.GL_TEXTURE_MAG_FILTER, glad.GL_LINEAR);
+    const data2 = stb.stbi_load("textures/awesomeface.png", &width, &height, &num_channels, 0);
+    glad.glTexImage2D(glad.GL_TEXTURE_2D, 0, glad.GL_RGB, width, height, 0, glad.GL_RGBA, glad.GL_UNSIGNED_BYTE, data2);
+    glad.glGenerateMipmap(glad.GL_TEXTURE_2D);
+    stb.stbi_image_free(data2);
+
+    const shaderProgram = try Shader.new(alloc, "part2/vertex.glsl", "part2/fragment.glsl");
 
     const vertices = [_]f32{
-        0.5,  0.5,  0.0, 1.0, 0.0, 0.0,
-        -0.5, 0.5,  0.0, 0.0, 1.0, 0.0,
-        0.0,  -0.5, 0.0, 0.0, 0.0, 1.0,
+        0.5,  0.5,  0.0, 1.0, 0.0, 0.0, 1.0, 1.0,
+        0.5,  -0.5, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0,
+        -0.5, -0.5, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0,
+        -0.5, 0.5,  0.0, 0.0, 0.0, 1.0, 0.0, 1.0,
     };
+    const indices = [_]c_uint{
+        0, 1, 3,
+        1, 2, 3,
+    };
+    const stride = 8 * @sizeOf(f32);
 
     var vao: c_uint = undefined;
     var vbo: c_uint = undefined;
+    var ebo: c_uint = undefined;
     glad.glGenVertexArrays(1, &vao);
     glad.glGenBuffers(1, &vbo);
+    glad.glGenBuffers(1, &ebo);
     glad.glBindVertexArray(vao);
 
     glad.glBindBuffer(glad.GL_ARRAY_BUFFER, vbo);
     glad.glBufferData(glad.GL_ARRAY_BUFFER, vertices.len * @sizeOf(f32), &vertices, glad.GL_STATIC_DRAW);
 
-    glad.glVertexAttribPointer(0, 3, glad.GL_FLOAT, glad.GL_FALSE, 6 * @sizeOf(f32), &0);
-    glad.glEnableVertexAttribArray(0);
-    glad.glVertexAttribPointer(1, 3, glad.GL_FLOAT, glad.GL_FALSE, 6 * @sizeOf(f32), @ptrFromInt(3 * @sizeOf(f32)));
-    glad.glEnableVertexAttribArray(1);
+    glad.glBindBuffer(glad.GL_ELEMENT_ARRAY_BUFFER, ebo);
+    glad.glBufferData(glad.GL_ELEMENT_ARRAY_BUFFER, indices.len * @sizeOf(c_uint), &indices, glad.GL_STATIC_DRAW);
 
+    glad.glVertexAttribPointer(0, 3, glad.GL_FLOAT, glad.GL_FALSE, stride, &0);
+    glad.glEnableVertexAttribArray(0);
+    glad.glVertexAttribPointer(1, 3, glad.GL_FLOAT, glad.GL_FALSE, stride, @ptrFromInt(3 * @sizeOf(f32)));
+    glad.glEnableVertexAttribArray(1);
+    glad.glVertexAttribPointer(2, 2, glad.GL_FLOAT, glad.GL_FALSE, stride, @ptrFromInt(6 * @sizeOf(f32)));
+    glad.glEnableVertexAttribArray(2);
+
+    glad.glBindBuffer(glad.GL_ELEMENT_ARRAY_BUFFER, 0);
     glad.glBindBuffer(glad.GL_ARRAY_BUFFER, 0);
     glad.glBindVertexArray(0);
 
-    shaderProgram.setFloat("offset", 0.2);
+    shaderProgram.use();
+    shaderProgram.setInt("texture1", 0);
+    shaderProgram.setInt("texture2", 1);
 
     while (glfw.glfwWindowShouldClose(window) == cgen.cfalse) {
         // INPUT
@@ -73,8 +120,12 @@ pub fn main() !void {
         glad.glClear(glad.GL_COLOR_BUFFER_BIT);
 
         shaderProgram.use();
+        glad.glActiveTexture(glad.GL_TEXTURE0);
+        glad.glBindTexture(glad.GL_TEXTURE_2D, texture);
+        glad.glActiveTexture(glad.GL_TEXTURE1);
+        glad.glBindTexture(glad.GL_TEXTURE_2D, texture2);
         glad.glBindVertexArray(vao);
-        glad.glDrawArrays(glad.GL_TRIANGLES, 0, vertices.len / 6);
+        glad.glDrawElements(glad.GL_TRIANGLES, 6, glad.GL_UNSIGNED_INT, &indices);
         glad.glBindVertexArray(0);
 
         // FINALIZE

@@ -4,6 +4,7 @@ const fs = std.fs;
 pub const cgen = @import("ctranslations/general.zig");
 pub const glad = @import("ctranslations/glad.zig");
 pub const glfw = @import("ctranslations/glfw.zig");
+pub const stb = @import("ctranslations/stb_image.zig");
 
 pub const ShaderErrors = error{ FailedVertexShader, FailedFragmentShader, FailedLinking };
 
