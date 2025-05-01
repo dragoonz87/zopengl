@@ -47,7 +47,7 @@ pub fn main() !void {
     glad.glTexParameteri(glad.GL_TEXTURE_2D, glad.GL_TEXTURE_WRAP_S, glad.GL_REPEAT);
     glad.glTexParameteri(glad.GL_TEXTURE_2D, glad.GL_TEXTURE_WRAP_T, glad.GL_REPEAT);
     glad.glTexParameteri(glad.GL_TEXTURE_2D, glad.GL_TEXTURE_MIN_FILTER, glad.GL_LINEAR_MIPMAP_LINEAR);
-    glad.glTexParameteri(glad.GL_TEXTURE_2D, glad.GL_TEXTURE_MAG_FILTER, glad.GL_LINEAR);
+    glad.glTexParameteri(glad.GL_TEXTURE_2D, glad.GL_TEXTURE_MAG_FILTER, glad.GL_NEAREST);
     var width: c_int = undefined;
     var height: c_int = undefined;
     var num_channels: c_int = undefined;
@@ -62,7 +62,7 @@ pub fn main() !void {
     glad.glTexParameteri(glad.GL_TEXTURE_2D, glad.GL_TEXTURE_WRAP_S, glad.GL_REPEAT);
     glad.glTexParameteri(glad.GL_TEXTURE_2D, glad.GL_TEXTURE_WRAP_T, glad.GL_REPEAT);
     glad.glTexParameteri(glad.GL_TEXTURE_2D, glad.GL_TEXTURE_MIN_FILTER, glad.GL_LINEAR_MIPMAP_LINEAR);
-    glad.glTexParameteri(glad.GL_TEXTURE_2D, glad.GL_TEXTURE_MAG_FILTER, glad.GL_LINEAR);
+    glad.glTexParameteri(glad.GL_TEXTURE_2D, glad.GL_TEXTURE_MAG_FILTER, glad.GL_NEAREST);
     const data2 = stb.stbi_load("textures/awesomeface.png", &width, &height, &num_channels, 0);
     glad.glTexImage2D(glad.GL_TEXTURE_2D, 0, glad.GL_RGB, width, height, 0, glad.GL_RGBA, glad.GL_UNSIGNED_BYTE, data2);
     glad.glGenerateMipmap(glad.GL_TEXTURE_2D);
@@ -71,10 +71,10 @@ pub fn main() !void {
     const shaderProgram = try Shader.new(alloc, "part2/vertex.glsl", "part2/fragment.glsl");
 
     const vertices = [_]f32{
-        0.5,  0.5,  0.0, 1.0, 0.0, 0.0, 2.0, 2.0,
-        0.5,  -0.5, 0.0, 0.0, 1.0, 0.0, 2.0, 0.0,
-        -0.5, -0.5, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0,
-        -0.5, 0.5,  0.0, 0.0, 0.0, 1.0, 0.0, 2.0,
+        0.5,  0.5,  0.0, 1.0, 0.0, 0.0, 0.6, 0.6,
+        0.5,  -0.5, 0.0, 0.0, 1.0, 0.0, 0.6, 0.4,
+        -0.5, -0.5, 0.0, 0.0, 1.0, 0.0, 0.4, 0.4,
+        -0.5, 0.5,  0.0, 0.0, 0.0, 1.0, 0.4, 0.6,
     };
     const indices = [_]c_uint{
         0, 1, 3,
