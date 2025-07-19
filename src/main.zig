@@ -14,6 +14,7 @@ const GladErrors = error{FailedInitialize};
 
 const DebugAllocator = std.heap.DebugAllocator(.{});
 var daInit = DebugAllocator.init;
+var mixVal: f32 = 0.2;
 
 pub fn main() !void {
     const alloc = daInit.allocator();
@@ -71,10 +72,11 @@ pub fn main() !void {
     const shaderProgram = try Shader.new(alloc, "part2/vertex.glsl", "part2/fragment.glsl");
 
     const vertices = [_]f32{
-        0.5,  0.5,  0.0, 1.0, 0.0, 0.0, 0.6, 0.6,
-        0.5,  -0.5, 0.0, 0.0, 1.0, 0.0, 0.6, 0.4,
-        -0.5, -0.5, 0.0, 0.0, 1.0, 0.0, 0.4, 0.4,
-        -0.5, 0.5,  0.0, 0.0, 0.0, 1.0, 0.4, 0.6,
+//         positions    |  color info  |  texture
+        0.5,  0.5,  0.0, 1.0, 0.0, 0.0, 1.0, 1.0,
+        0.5,  -0.5, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0,
+        -0.5, -0.5, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0,
+        -0.5, 0.5,  0.0, 0.0, 0.0, 1.0, 0.0, 1.0,
     };
     const indices = [_]c_uint{
         0, 1, 3,
@@ -120,6 +122,7 @@ pub fn main() !void {
         glad.glClear(glad.GL_COLOR_BUFFER_BIT);
 
         shaderProgram.use();
+        shaderProgram.setFloat("mixVal", mixVal);
         glad.glActiveTexture(glad.GL_TEXTURE0);
         glad.glBindTexture(glad.GL_TEXTURE_2D, texture);
         glad.glActiveTexture(glad.GL_TEXTURE1);
@@ -149,6 +152,16 @@ fn process_input(window: ?*glfw.GLFWwindow) void {
         glad.glPolygonMode(glad.GL_FRONT_AND_BACK, glad.GL_LINE);
     } else if (glfw.glfwGetKey(window, glfw.GLFW_KEY_F) == glfw.GLFW_PRESS) {
         glad.glPolygonMode(glad.GL_FRONT_AND_BACK, glad.GL_FILL);
+    } else if (glfw.glfwGetKey(window, glfw.GLFW_KEY_UP) == glfw.GLFW_PRESS) {
+        mixVal += 0.01;
+        if (mixVal > 1.0) {
+            mixVal = 1.0;
+        }
+    } else if (glfw.glfwGetKey(window, glfw.GLFW_KEY_DOWN) == glfw.GLFW_PRESS) {
+        mixVal -= 0.01;
+        if (mixVal < 0.0) {
+            mixVal = 0.0;
+        }
     }
 }
 
