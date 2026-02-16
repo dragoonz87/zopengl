@@ -2,6 +2,8 @@ const std = @import("std");
 const fs = std.fs;
 
 const lib = @import("opengl_lib");
+const zm = @import("zmath");
+const math = std.math;
 
 const cgen = lib.cgen;
 const glad = lib.glad;
@@ -127,6 +129,12 @@ pub fn main() !void {
         glad.glBindTexture(glad.GL_TEXTURE_2D, texture);
         glad.glActiveTexture(glad.GL_TEXTURE1);
         glad.glBindTexture(glad.GL_TEXTURE_2D, texture2);
+
+        const time: f32 = @floatCast(glfw.glfwGetTime());
+        const trans = zm.mul(zm.rotationZ(time), zm.translation(0.5, -0.5, 0));
+        const loc = glad.glGetUniformLocation(shaderProgram.id, "transform");
+        glad.glUniformMatrix4fv(loc, 1, glad.GL_FALSE, zm.arrNPtr(&trans));
+
         glad.glBindVertexArray(vao);
         glad.glDrawElements(glad.GL_TRIANGLES, 6, glad.GL_UNSIGNED_INT, &indices);
         glad.glBindVertexArray(0);
