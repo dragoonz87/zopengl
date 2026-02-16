@@ -98,7 +98,7 @@ pub fn main() !void {
     glad.glBindBuffer(glad.GL_ELEMENT_ARRAY_BUFFER, ebo);
     glad.glBufferData(glad.GL_ELEMENT_ARRAY_BUFFER, indices.len * @sizeOf(c_uint), &indices, glad.GL_STATIC_DRAW);
 
-    glad.glVertexAttribPointer(0, 3, glad.GL_FLOAT, glad.GL_FALSE, stride, &0);
+    glad.glVertexAttribPointer(0, 3, glad.GL_FLOAT, glad.GL_FALSE, stride, @ptrFromInt(0));
     glad.glEnableVertexAttribArray(0);
     glad.glVertexAttribPointer(1, 3, glad.GL_FLOAT, glad.GL_FALSE, stride, @ptrFromInt(3 * @sizeOf(f32)));
     glad.glEnableVertexAttribArray(1);

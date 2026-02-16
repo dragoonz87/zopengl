@@ -67,6 +67,6 @@ pub const Shader = struct {
 fn load_shader_source(alloc: std.mem.Allocator, filename: []const u8) ![1][*c]u8 {
     const shaders = "shaders/";
     const file = try fs.cwd().openFile(try std.mem.concat(alloc, u8, &[_][]u8{ @constCast(shaders), @constCast(filename) }), .{});
-    const buf: [*c]u8 = try file.readToEndAllocOptions(alloc, 1024 * 1024, null, 8, 0);
+    const buf: [*c]u8 = try file.readToEndAllocOptions(alloc, 1024 * 1024, null, .@"8", 0);
     return [_][*]u8{buf};
 }
