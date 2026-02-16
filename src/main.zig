@@ -137,6 +137,12 @@ pub fn main() !void {
 
         glad.glBindVertexArray(vao);
         glad.glDrawElements(glad.GL_TRIANGLES, 6, glad.GL_UNSIGNED_INT, &indices);
+
+        const trans2 = zm.mul(zm.scaling(math.sin(time), math.sin(time), 1), zm.translation(-0.5, 0.5, 0));
+        const loc2 = glad.glGetUniformLocation(shaderProgram.id, "transform");
+        glad.glUniformMatrix4fv(loc2, 1, glad.GL_FALSE, zm.arrNPtr(&trans2));
+        glad.glDrawElements(glad.GL_TRIANGLES, 6, glad.GL_UNSIGNED_INT, &indices);
+
         glad.glBindVertexArray(0);
 
         // FINALIZE
