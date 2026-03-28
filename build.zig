@@ -68,6 +68,7 @@ pub fn build(b: *std.Build) void {
     });
 
     const zmath = b.dependency("zmath", .{});
+    lib.root_module.addImport("zmath", zmath.module("root"));
     exe.root_module.addImport("zmath", zmath.module("root"));
 
     // This declares intent for the executable to be installed into the

@@ -18,6 +18,8 @@ const DebugAllocator = std.heap.DebugAllocator(.{});
 var daInit = DebugAllocator.init;
 var mixVal: f32 = 0.2;
 
+const Vec3 = @Vector(3, f32);
+
 pub fn main() !void {
     const alloc = daInit.allocator();
 
@@ -40,6 +42,8 @@ pub fn main() !void {
         std.debug.print("Failed to initialize GLAD\n", .{});
         return GladErrors.FailedInitialize;
     }
+
+    glad.glEnable(glad.GL_DEPTH_TEST);
 
     stb.stbi_set_flip_vertically_on_load(cgen.ctrue);
 
@@ -74,38 +78,64 @@ pub fn main() !void {
     const shaderProgram = try Shader.new(alloc, "part2/vertex.glsl", "part2/fragment.glsl");
 
     const vertices = [_]f32{
-//         positions    |  color info  |  texture
-        0.5,  0.5,  0.0, 1.0, 0.0, 0.0, 1.0, 1.0,
-        0.5,  -0.5, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0,
-        -0.5, -0.5, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0,
-        -0.5, 0.5,  0.0, 0.0, 0.0, 1.0, 0.0, 1.0,
+        // positions    |  texture
+        -0.5, -0.5, -0.5, 0.0, 0.0,
+        0.5,  -0.5, -0.5, 1.0, 0.0,
+        0.5,  0.5,  -0.5, 1.0, 1.0,
+        0.5,  0.5,  -0.5, 1.0, 1.0,
+        -0.5, 0.5,  -0.5, 0.0, 1.0,
+        -0.5, -0.5, -0.5, 0.0, 0.0,
+
+        -0.5, -0.5, 0.5,  0.0, 0.0,
+        0.5,  -0.5, 0.5,  1.0, 0.0,
+        0.5,  0.5,  0.5,  1.0, 1.0,
+        0.5,  0.5,  0.5,  1.0, 1.0,
+        -0.5, 0.5,  0.5,  0.0, 1.0,
+        -0.5, -0.5, 0.5,  0.0, 0.0,
+
+        -0.5, 0.5,  0.5,  1.0, 0.0,
+        -0.5, 0.5,  -0.5, 1.0, 1.0,
+        -0.5, -0.5, -0.5, 0.0, 1.0,
+        -0.5, -0.5, -0.5, 0.0, 1.0,
+        -0.5, -0.5, 0.5,  0.0, 0.0,
+        -0.5, 0.5,  0.5,  1.0, 0.0,
+
+        0.5,  0.5,  0.5,  1.0, 0.0,
+        0.5,  0.5,  -0.5, 1.0, 1.0,
+        0.5,  -0.5, -0.5, 0.0, 1.0,
+        0.5,  -0.5, -0.5, 0.0, 1.0,
+        0.5,  -0.5, 0.5,  0.0, 0.0,
+        0.5,  0.5,  0.5,  1.0, 0.0,
+
+        -0.5, -0.5, -0.5, 0.0, 1.0,
+        0.5,  -0.5, -0.5, 1.0, 1.0,
+        0.5,  -0.5, 0.5,  1.0, 0.0,
+        0.5,  -0.5, 0.5,  1.0, 0.0,
+        -0.5, -0.5, 0.5,  0.0, 0.0,
+        -0.5, -0.5, -0.5, 0.0, 1.0,
+
+        -0.5, 0.5,  -0.5, 0.0, 1.0,
+        0.5,  0.5,  -0.5, 1.0, 1.0,
+        0.5,  0.5,  0.5,  1.0, 0.0,
+        0.5,  0.5,  0.5,  1.0, 0.0,
+        -0.5, 0.5,  0.5,  0.0, 0.0,
+        -0.5, 0.5,  -0.5, 0.0, 1.0,
     };
-    const indices = [_]c_uint{
-        0, 1, 3,
-        1, 2, 3,
-    };
-    const stride = 8 * @sizeOf(f32);
+    const stride = 5 * @sizeOf(f32);
 
     var vao: c_uint = undefined;
     var vbo: c_uint = undefined;
-    var ebo: c_uint = undefined;
     glad.glGenVertexArrays(1, &vao);
     glad.glGenBuffers(1, &vbo);
-    glad.glGenBuffers(1, &ebo);
     glad.glBindVertexArray(vao);
 
     glad.glBindBuffer(glad.GL_ARRAY_BUFFER, vbo);
     glad.glBufferData(glad.GL_ARRAY_BUFFER, vertices.len * @sizeOf(f32), &vertices, glad.GL_STATIC_DRAW);
 
-    glad.glBindBuffer(glad.GL_ELEMENT_ARRAY_BUFFER, ebo);
-    glad.glBufferData(glad.GL_ELEMENT_ARRAY_BUFFER, indices.len * @sizeOf(c_uint), &indices, glad.GL_STATIC_DRAW);
-
     glad.glVertexAttribPointer(0, 3, glad.GL_FLOAT, glad.GL_FALSE, stride, @ptrFromInt(0));
     glad.glEnableVertexAttribArray(0);
-    glad.glVertexAttribPointer(1, 3, glad.GL_FLOAT, glad.GL_FALSE, stride, @ptrFromInt(3 * @sizeOf(f32)));
+    glad.glVertexAttribPointer(1, 2, glad.GL_FLOAT, glad.GL_FALSE, stride, @ptrFromInt(3 * @sizeOf(f32)));
     glad.glEnableVertexAttribArray(1);
-    glad.glVertexAttribPointer(2, 2, glad.GL_FLOAT, glad.GL_FALSE, stride, @ptrFromInt(6 * @sizeOf(f32)));
-    glad.glEnableVertexAttribArray(2);
 
     glad.glBindBuffer(glad.GL_ELEMENT_ARRAY_BUFFER, 0);
     glad.glBindBuffer(glad.GL_ARRAY_BUFFER, 0);
@@ -115,13 +145,29 @@ pub fn main() !void {
     shaderProgram.setInt("texture1", 0);
     shaderProgram.setInt("texture2", 1);
 
+    const cubePositions = [_]Vec3{
+        .{ 0.0,  0.0,  0.0}, 
+        .{ 2.0,  5.0, -15.0}, 
+        .{-1.5, -2.2, -2.5},  
+        .{-3.8, -2.0, -12.3},  
+        .{ 2.4, -0.4, -3.5},  
+        .{-1.7,  3.0, -7.5},  
+        .{ 1.3, -2.0, -2.5},  
+        .{ 1.5,  2.0, -2.5}, 
+        .{ 1.5,  0.2, -1.5}, 
+        .{-1.3,  1.0, -1.5}
+    };
+
+    const view = zm.translation(0, 0, -3);
+    const projection = zm.perspectiveFovRhGl(math.degreesToRadians(45), 800.0 / 600.0, 0.1, 100);
+
     while (glfw.glfwWindowShouldClose(window) == cgen.cfalse) {
         // INPUT
         process_input(window);
 
         // RENDER
         glad.glClearColor(0.2, 0.3, 0.3, 1);
-        glad.glClear(glad.GL_COLOR_BUFFER_BIT);
+        glad.glClear(glad.GL_COLOR_BUFFER_BIT | glad.GL_DEPTH_BUFFER_BIT);
 
         shaderProgram.use();
         shaderProgram.setFloat("mixVal", mixVal);
@@ -130,19 +176,18 @@ pub fn main() !void {
         glad.glActiveTexture(glad.GL_TEXTURE1);
         glad.glBindTexture(glad.GL_TEXTURE_2D, texture2);
 
-        const time: f32 = @floatCast(glfw.glfwGetTime());
-        const trans = zm.mul(zm.rotationZ(time), zm.translation(0.5, -0.5, 0));
-        const loc = glad.glGetUniformLocation(shaderProgram.id, "transform");
-        glad.glUniformMatrix4fv(loc, 1, glad.GL_FALSE, zm.arrNPtr(&trans));
+        shaderProgram.setMat4("view", &view);
+        shaderProgram.setMat4("projection", &projection);
 
         glad.glBindVertexArray(vao);
-        glad.glDrawElements(glad.GL_TRIANGLES, 6, glad.GL_UNSIGNED_INT, &indices);
-
-        const trans2 = zm.mul(zm.scaling(math.sin(time), math.sin(time), 1), zm.translation(-0.5, 0.5, 0));
-        const loc2 = glad.glGetUniformLocation(shaderProgram.id, "transform");
-        glad.glUniformMatrix4fv(loc2, 1, glad.GL_FALSE, zm.arrNPtr(&trans2));
-        glad.glDrawElements(glad.GL_TRIANGLES, 6, glad.GL_UNSIGNED_INT, &indices);
-
+        for (cubePositions, 0..) |pos, i| {
+            var model = zm.translation(pos[0], pos[1], pos[2]);
+            var angle: f32 = @floatFromInt(i);
+            angle *= 20.0;
+            model = zm.mul(zm.mul(zm.rotationX(angle), zm.mul(zm.rotationY(angle * 0.3), zm.rotationZ(angle * 0.5))), model);
+            shaderProgram.setMat4("model", &model);
+            glad.glDrawArrays(glad.GL_TRIANGLES, 0, 36);
+        }
         glad.glBindVertexArray(0);
 
         // FINALIZE

@@ -1,6 +1,8 @@
 const std = @import("std");
 const fs = std.fs;
 
+const zm = @import("zmath");
+
 pub const cgen = @import("ctranslations/general.zig");
 pub const glad = @import("ctranslations/glad.zig");
 pub const glfw = @import("ctranslations/glfw.zig");
@@ -61,6 +63,9 @@ pub const Shader = struct {
     }
     pub fn setFloat(self: Shader, name: []const u8, value: f32) void {
         glad.glUniform1f(glad.glGetUniformLocation(self.id, @ptrCast(name)), value);
+    }
+    pub fn setMat4(self: Shader, name: []const u8, value: *const zm.Mat) void {
+        glad.glUniformMatrix4fv(glad.glGetUniformLocation(self.id, @ptrCast(name)), 1, glad.GL_FALSE, zm.arrNPtr(value));
     }
 };
 
