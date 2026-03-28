@@ -17,6 +17,7 @@ const GladErrors = error{FailedInitialize};
 const DebugAllocator = std.heap.DebugAllocator(.{});
 var daInit = DebugAllocator.init;
 var mixVal: f32 = 0.2;
+var viewRot: f32 = 0.0;
 
 const Vec3 = @Vector(3, f32);
 
@@ -158,7 +159,6 @@ pub fn main() !void {
         .{-1.3,  1.0, -1.5}
     };
 
-    const view = zm.translation(0, 0, -3);
     const projection = zm.perspectiveFovRhGl(math.degreesToRadians(45), 800.0 / 600.0, 0.1, 100);
 
     while (glfw.glfwWindowShouldClose(window) == cgen.cfalse) {
@@ -176,6 +176,8 @@ pub fn main() !void {
         glad.glActiveTexture(glad.GL_TEXTURE1);
         glad.glBindTexture(glad.GL_TEXTURE_2D, texture2);
 
+        // const view = zm.mul(zm.rotationY(math.degreesToRadians(viewRot)), zm.translation(0, 0, -3));
+        const view = zm.mul(zm.translation(0, 0, -3), zm.rotationY(math.degreesToRadians(viewRot)));
         shaderProgram.setMat4("view", &view);
         shaderProgram.setMat4("projection", &projection);
 
@@ -185,6 +187,9 @@ pub fn main() !void {
             var angle: f32 = @floatFromInt(i);
             angle *= 20.0;
             model = zm.mul(zm.mul(zm.rotationX(angle), zm.mul(zm.rotationY(angle * 0.3), zm.rotationZ(angle * 0.5))), model);
+            if (i % 3 == 0) {
+                model = zm.mul(zm.mul(zm.rotationX(@floatCast(glfw.glfwGetTime() * math.degreesToRadians(40))), zm.rotationY(@floatCast(glfw.glfwGetTime() * math.degreesToRadians(20)))), model);
+            }
             shaderProgram.setMat4("model", &model);
             glad.glDrawArrays(glad.GL_TRIANGLES, 0, 36);
         }
@@ -221,6 +226,10 @@ fn process_input(window: ?*glfw.GLFWwindow) void {
         if (mixVal < 0.0) {
             mixVal = 0.0;
         }
+    } else if (glfw.glfwGetKey(window, glfw.GLFW_KEY_RIGHT) == glfw.GLFW_PRESS) {
+        viewRot += 0.7;
+    } else if (glfw.glfwGetKey(window, glfw.GLFW_KEY_LEFT) == glfw.GLFW_PRESS) {
+        viewRot -= 0.7;
     }
 }
 
